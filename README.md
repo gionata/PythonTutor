@@ -1,8 +1,47 @@
 <!--
 author:   Gionata Massi
-version:  0.1.0
+version:  0.1.1
 language: en
 comment:  LiaScript macros to open code blocks in Python Tutor (step-through visualization for C, C++, Python, Java, JavaScript).
+
+@PythonTutorLang: @PythonTutorBase(@0)
+
+@PythonTutor.cpp:  @PythonTutorLang(cpp)
+@PythonTutor.c:    @PythonTutorLang(c)
+@PythonTutor.py:   @PythonTutorLang(311)
+@PythonTutor.java: @PythonTutorLang(java)
+@PythonTutor.js:   @PythonTutorLang(js)
+
+@PythonTutorEmbedLang: @PythonTutorEmbedBase(@0)
+
+@PythonTutorEmbed.cpp:  @PythonTutorEmbedLang(cpp)
+@PythonTutorEmbed.c:    @PythonTutorEmbedLang(c)
+@PythonTutorEmbed.py:   @PythonTutorEmbedLang(311)
+@PythonTutorEmbed.java: @PythonTutorEmbedLang(java)
+@PythonTutorEmbed.js:   @PythonTutorEmbedLang(js)
+
+@PythonTutorBase
+<script run-once>
+const code = encodeURIComponent(String.raw`@'input`);
+const lang = `@0`;
+const url =
+  "https://pythontutor.com/visualize.html?via=liascript" +
+  "#code=" + code + "&mode=display&py=" + encodeURIComponent(lang);
+`HTML: <p><a href="${url}" target="_blank" rel="noopener">Open in Python Tutor (${lang})</a></p>`;
+</script>
+@end
+
+@PythonTutorEmbedBase
+<script run-once>
+const code = encodeURIComponent(String.raw`@'input`);
+const lang = `@0`;
+const url =
+  "https://pythontutor.com/iframe-embed.html" +
+  "#code=" + code +
+  "&codeDivHeight=400&codeDivWidth=350&curInstr=0&py=" + encodeURIComponent(lang);
+`HTML: <iframe width="100%" height="480" frameborder="0" src="${url}" title="Python Tutor"></iframe>`;
+</script>
+@end
 -->
 
 # Python Tutor – LiaScript Template
@@ -178,42 +217,11 @@ Legacy values such as `cpp_g++9.3.0` are not required for new links; use `cpp`.
 
 ## Implementation
 
-Macro definitions (loaded via `import`):
+Macro definitions live in the **document header comment** (the first `<!-- ... -->`).
+LiaScript loads only that header when the file is imported via `import:`.
 
-<!--
-@PythonTutorLang:  @PythonTutorBase(@0)
-@PythonTutor.cpp:  @PythonTutorLang(cpp)
-@PythonTutor.c:    @PythonTutorLang(c)
-@PythonTutor.py:   @PythonTutorLang(311)
-@PythonTutor.java: @PythonTutorLang(java)
-@PythonTutor.js:   @PythonTutorLang(js)
-
-@PythonTutorEmbedLang:  @PythonTutorEmbedBase(@0)
-@PythonTutorEmbed.cpp:  @PythonTutorEmbedLang(cpp)
-@PythonTutorEmbed.c:    @PythonTutorEmbedLang(c)
-@PythonTutorEmbed.py:   @PythonTutorEmbedLang(311)
-@PythonTutorEmbed.java: @PythonTutorEmbedLang(java)
-@PythonTutorEmbed.js:   @PythonTutorEmbedLang(js)
-
-@PythonTutorBase: <script run-once>
-const code = encodeURIComponent(String.raw`@input`);
-const lang = `@0`;
-const url =
-  "https://pythontutor.com/visualize.html?via=liascript" +
-  "#code=" + code + "&mode=display&py=" + encodeURIComponent(lang);
-`HTML: <p><a href="${url}" target="_blank" rel="noopener">Open in Python Tutor (${lang})</a></p>`;
-</script>
-
-@PythonTutorEmbedBase: <script run-once>
-const code = encodeURIComponent(String.raw`@input`);
-const lang = `@0`;
-const url =
-  "https://pythontutor.com/iframe-embed.html" +
-  "#code=" + code +
-  "&codeDivHeight=400&codeDivWidth=350&curInstr=0&py=" + encodeURIComponent(lang);
-`HTML: <iframe width="100%" height="480" frameborder="0" src="${url}" title="Python Tutor"></iframe>`;
-</script>
--->
+The macros are block macros (`@Name` … `@end`) that inject a small `<script run-once>`
+which encodes the preceding code block (`@input`) and produces either a link or an iframe.
 
 ---
 
