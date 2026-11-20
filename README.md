@@ -1,8 +1,10 @@
 <!--
 author:   Gionata Massi
-version:  0.3
+email:    gionata@users.noreply.github.com
+version:  0.4.0
 language: en
-comment:  LiaScript macros to open code blocks in Python Tutor (step-through visualization for C, C++, Python, Java, JavaScript).
+comment:  LiaScript macros to open code blocks in Python Tutor (step-through
+          visualization for C, C++, Python, Java, JavaScript).
 
 @PythonTutor.cpp:  @PythonTutorBase(cpp, C++)
 @PythonTutor.c:    @PythonTutorBase(c, C)
@@ -23,16 +25,15 @@ comment:  LiaScript macros to open code blocks in Python Tutor (step-through vis
 (() => {
   const lang = "@0".trim();
   const label = "@1".trim();
-  let rawCode = "";
 
+  // Claim the first unclaimed code block in document order.
+  // Avoids the global index bug when several macros share a slide or when
+  // previous slides left __ptLastCodeIdx higher than the visible block count.
+  let rawCode = "";
   if (typeof document !== "undefined") {
-    const allCodes = Array.from(document.querySelectorAll("pre code"));
-    const prevIdx = typeof window.__ptLastCodeIdx === "number" ? window.__ptLastCodeIdx : -1;
-    const nextIdx = allCodes.findIndex((_, i) => i > prevIdx);
-    const targetIdx = nextIdx !== -1 ? nextIdx : allCodes.length - 1;
-    if (targetIdx >= 0 && allCodes[targetIdx]) {
-      window.__ptLastCodeIdx = targetIdx;
-      const el = allCodes[targetIdx];
+    const el = document.querySelector("pre code:not([data-pt-claimed])");
+    if (el) {
+      el.setAttribute("data-pt-claimed", "1");
       rawCode = (el.textContent || el.innerText || "")
         .replace(/\r\n?/g, "\n")
         .replace(/\u00a0/g, " ");
@@ -40,8 +41,14 @@ comment:  LiaScript macros to open code blocks in Python Tutor (step-through vis
   }
 
   const rawDocLang =
-    (typeof window !== "undefined" && (window.LIA?.lang || window.LIA?.language)) ||
-    (typeof document !== "undefined" && (document.documentElement?.lang || document.body?.lang)) ||
+    (typeof window !== "undefined" &&
+      (window.LIA?.settings?.language ||
+        window.LIA?.settings?.lang ||
+        window.LIA?.definition?.language ||
+        window.LIA?.language ||
+        window.LIA?.lang)) ||
+    (typeof document !== "undefined" &&
+      (document.documentElement?.lang || document.body?.lang)) ||
     "en";
   const isItalian = String(rawDocLang).trim().toLowerCase().startsWith("it");
   const linkText = isItalian
@@ -62,16 +69,12 @@ comment:  LiaScript macros to open code blocks in Python Tutor (step-through vis
 <script run-once>
 (() => {
   const lang = "@0".trim();
-  let rawCode = "";
 
+  let rawCode = "";
   if (typeof document !== "undefined") {
-    const allCodes = Array.from(document.querySelectorAll("pre code"));
-    const prevIdx = typeof window.__ptLastCodeIdx === "number" ? window.__ptLastCodeIdx : -1;
-    const nextIdx = allCodes.findIndex((_, i) => i > prevIdx);
-    const targetIdx = nextIdx !== -1 ? nextIdx : allCodes.length - 1;
-    if (targetIdx >= 0 && allCodes[targetIdx]) {
-      window.__ptLastCodeIdx = targetIdx;
-      const el = allCodes[targetIdx];
+    const el = document.querySelector("pre code:not([data-pt-claimed])");
+    if (el) {
+      el.setAttribute("data-pt-claimed", "1");
       rawCode = (el.textContent || el.innerText || "")
         .replace(/\r\n?/g, "\n")
         .replace(/\u00a0/g, " ");
@@ -79,8 +82,14 @@ comment:  LiaScript macros to open code blocks in Python Tutor (step-through vis
   }
 
   const rawDocLang =
-    (typeof window !== "undefined" && (window.LIA?.lang || window.LIA?.language)) ||
-    (typeof document !== "undefined" && (document.documentElement?.lang || document.body?.lang)) ||
+    (typeof window !== "undefined" &&
+      (window.LIA?.settings?.language ||
+        window.LIA?.settings?.lang ||
+        window.LIA?.definition?.language ||
+        window.LIA?.language ||
+        window.LIA?.lang)) ||
+    (typeof document !== "undefined" &&
+      (document.documentElement?.lang || document.body?.lang)) ||
     "en";
   const isItalian = String(rawDocLang).trim().toLowerCase().startsWith("it");
   const iframeTitle = isItalian
@@ -90,37 +99,42 @@ comment:  LiaScript macros to open code blocks in Python Tutor (step-through vis
   const frameId = "pt-embed-" + Math.random().toString(36).slice(2, 9);
 
   const computeTargetWidth = (iframeEl) => {
-    const vw = typeof window !== "undefined"
-      ? (window.innerWidth || document.documentElement?.clientWidth || 1024)
-      : 1024;
-    const parentW = iframeEl && iframeEl.parentElement
-      ? iframeEl.parentElement.getBoundingClientRect().width
-      : vw;
-    // Se il contenitore è più stretto del viewport, proviamo a usare la larghezza del viewport
-    // (lasciando un piccolo margine di sicurezza di 16px per evitare scrollbar orizzontale)
+    const vw =
+      typeof window !== "undefined"
+        ? window.innerWidth || document.documentElement?.clientWidth || 1024
+        : 1024;
+    const parentW =
+      iframeEl && iframeEl.parentElement
+        ? iframeEl.parentElement.getBoundingClientRect().width
+        : vw;
     return Math.max(320, Math.round(Math.max(parentW, vw - 16)));
   };
 
   const initialWidth = computeTargetWidth(null);
-  const codeDivWidth = Math.round(Math.min(820, Math.max(320, initialWidth * 0.44)));
+  const codeDivWidth = Math.round(
+    Math.min(820, Math.max(320, initialWidth * 0.44))
+  );
 
   const code = encodeURIComponent(rawCode);
   const url =
     "https://pythontutor.com/iframe-embed.html" +
-    "#code=" + code +
-    `&codeDivHeight=420&codeDivWidth=${codeDivWidth}&curInstr=0&py=` + encodeURIComponent(lang);
+    "#code=" +
+    code +
+    `&codeDivHeight=420&codeDivWidth=${codeDivWidth}&curInstr=0&py=` +
+    encodeURIComponent(lang);
 
   if (typeof window !== "undefined") {
     const applyResponsiveWidth = () => {
       const el = document.getElementById(frameId);
       if (!el) return;
       const targetW = computeTargetWidth(el);
-      const parentRect = el.parentElement ? el.parentElement.getBoundingClientRect() : null;
+      const parentRect = el.parentElement
+        ? el.parentElement.getBoundingClientRect()
+        : null;
       el.setAttribute("width", String(targetW));
       el.style.width = targetW + "px";
       el.style.maxWidth = "none";
       if (parentRect && parentRect.width > 0 && targetW > parentRect.width) {
-        // Centra l'iframe rispetto al contenitore padre per estenderlo sui lati
         const offset = Math.round((parentRect.width - targetW) / 2);
         el.style.position = "relative";
         el.style.left = offset + "px";
@@ -143,22 +157,48 @@ comment:  LiaScript macros to open code blocks in Python Tutor (step-through vis
 
 # Python Tutor – LiaScript Template
 
+                               --{{0}}--
 Open a code block in [Python Tutor](https://pythontutor.com) so learners can
 **step through execution** and inspect the call stack, variables, and heap.
 
 Despite the name, Python Tutor visualizes **Python, C, C++, Java, and JavaScript**
 on real language implementations (server-side).
 
-**Try this template in LiaScript:**  
+**Try it on LiaScript:**
+
 https://liascript.github.io/course/?https://raw.githubusercontent.com/gionata/PythonTutor/main/README.md
 
-**Repository:**  
+**See the project on GitHub:**
+
 https://github.com/gionata/PythonTutor
+
+                               --{{1}}--
+There are three ways to use this template. The easiest is the `import`
+statement. You can also copy the macro definitions into your course header, or
+clone the repository and adapt it.
+
+                                 {{1}}
+********************************************************************************
+
+1. Load the macros via
+
+   `import: https://raw.githubusercontent.com/gionata/PythonTutor/main/README.md`
+
+   or pin a version that will not change:
+
+   `import: https://raw.githubusercontent.com/gionata/PythonTutor/0.4.0/README.md`
+
+2. Copy the definitions from this document’s header into your project
+
+3. Clone this repository on GitHub
+
+********************************************************************************
 
 ---
 
 ## Why this template?
 
+                               --{{0}}--
 LiaScript already has templates for *running* code (Pyodide, Skulpt, CodeRunner,
 JSCPP). This one does something different: it builds a **Python Tutor URL** from
 the code in a block so students can **see memory and control flow**, which is
@@ -170,17 +210,11 @@ There was no dedicated LiaScript template for Python Tutor at the time of writin
 
 ---
 
-## Installation
-
-Add one line to your course header comment:
-
-```text
-import: https://raw.githubusercontent.com/gionata/PythonTutor/main/README.md
-```
-
----
-
 ## Quick start
+
+                               --{{0}}--
+Put a language macro **immediately after** a fenced code block. When the slide
+renders, a link (or an iframe for the Embed variants) appears under the code.
 
 ```cpp
 #include <iostream>
@@ -216,20 +250,25 @@ print(x)
 | `@PythonTutorLang(LANG)` | custom `LANG` string |
 | `@PythonTutorEmbed.cpp` (etc.) | same languages, **iframe** embed |
 
-**Default behaviour (`@PythonTutor.*`):** opens a link in a new tab
-(`visualize.html`, `mode=display`). Prefer this when iframe embedding is blocked.
+**Default behaviour (`@PythonTutor.*`):** inserts a link that opens
+`visualize.html` with `mode=display` in a new tab. Prefer this when third-party
+iframes are blocked.
 
-**Embed behaviour (`@PythonTutorEmbed.*`):** inserts an iframe
-(`iframe-embed.html`). Some browsers or school networks may restrict third-party
-iframes; fall back to the link macros if needed.
+**Embed behaviour (`@PythonTutorEmbed.*`):** inserts an iframe from
+`iframe-embed.html`. School networks may block it; fall back to the link macros.
+
+**Italian UI:** if the importing course sets `language: it` (or the document
+language starts with `it`), link text becomes **Apri in Python Tutor (…)**.
 
 ---
 
 ## Examples
 
-Explore how the macros work across different languages. In LiaScript, code blocks with attached evaluator macros are interactive: you can edit the code directly and click the **Execute** button (or press <kbd>Shift</kbd>+<kbd>Enter</kbd> / <kbd>Ctrl</kbd>+<kbd>Enter</kbd>) to generate the Python Tutor visualization link or embedded iframe in the terminal output.
+                               --{{0}}--
+Each example pairs one code block with one macro. Several macros may appear on
+the same slide; each claims the next unclaimed code block in document order.
 
-### C++ (link)
+### `@PythonTutor.cpp`
 
 ```cpp
 #include <iostream>
@@ -244,7 +283,7 @@ int main() {
 ```
 @PythonTutor.cpp
 
-### C
+### `@PythonTutor.c`
 
 ```c
 #include <stdio.h>
@@ -257,7 +296,7 @@ int main(void) {
 ```
 @PythonTutor.c
 
-### Python 3.11
+### `@PythonTutor.py`
 
 ```python
 def f(n):
@@ -269,16 +308,16 @@ print(f(5))
 ```
 @PythonTutor.py
 
-### Custom language parameter
+### `@PythonTutorLang(LANG)`
 
 ```cpp
 int main() { return 0; }
 ```
 @PythonTutorLang(cpp)
 
-### Embed (iframe)
+### `@PythonTutorEmbed.*`
 
-**Python**:
+**Python:**
 
 ```python
 s = "hi"
@@ -286,9 +325,9 @@ t = s
 ```
 @PythonTutorEmbed.py
 
-**C++**:
+**C++:**
 
-``` cpp
+```cpp
 #include <iostream>
 
 int f(int n) {
@@ -306,6 +345,7 @@ int main() {
 
 ## URL format
 
+                               --{{0}}--
 Links follow the official Python Tutor scheme
 ([guide for tool builders](https://pythontutor.com/for-ai-assistants.html)):
 
@@ -320,7 +360,7 @@ https://pythontutor.com/visualize.html?via=liascript#code=<ENCODED>&mode=display
 | `py` | `cpp`, `c`, `311`, `java`, `js` |
 | `via` | Optional attribution (`liascript`) |
 
-Legacy values such as `cpp_g++9.3.0` are not required for new links; use `cpp`.
+Legacy values such as `cpp_g++9.3.0` are not required; use `cpp`.
 
 ---
 
@@ -329,20 +369,28 @@ Legacy values such as `cpp_g++9.3.0` are not required for new links; use `cpp`.
 - **Online only:** visualization runs on pythontutor.com (not offline / PWA-only).
 - **Snippet size:** very large programs can exceed practical URL length; keep examples short.
 - **Iframes:** may be blocked; the link macros remain the safer default.
+- **Order:** each macro must follow its code block; macros claim code blocks in document order.
 
 ---
 
 ## Implementation
 
-Macro definitions live in the **document header comment** (the first `<!-- ... -->`).
-LiaScript loads only that header when the file is imported via `import:`.
+                               --{{0}}--
+Macro definitions live in the **document header comment** (the first
+`<!-- ... -->`). LiaScript loads only that header when the file is imported via
+`import:`.
 
-Pattern (one level of indirection, same as Pyodide):
-
-- `@PythonTutor.cpp` → `@PythonTutorBase(cpp)` (single-line)
-- `@PythonTutorBase` is a **block** macro (`@end`) containing the `<script>` evaluator
-- Inside the script, `"@'input"` is replaced by LiaScript with the code block content (escaped),
-  `"@0"` by the language parameter, and `console.html(...)` renders the link or iframe directly into the output terminal
+- `@PythonTutor.cpp` expands to `@PythonTutorBase(cpp, C++)` (single-line).
+- `@PythonTutorBase` is a **block** macro (`@end`) with a `<script run-once>` that
+  returns `HTML: …`.
+- Because these macros auto-render (they are not code evaluators), they do **not**
+  use `@'input`. Instead, at run time each script claims the first
+  `pre code:not([data-pt-claimed])` in the document and marks it with
+  `data-pt-claimed`, so several macros on the same slide (or across slides) do
+  not reuse the wrong block.
+- UI language is detected from `LIA.settings.language` / `LIA.language` / the
+  document `lang` attribute. Courses in Italian should set `language: it` in
+  their own header so links read **Apri in Python Tutor**.
 
 ---
 
